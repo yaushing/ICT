@@ -1,4 +1,3 @@
-from random import *
 '''
 Exercise 1: Private Clubhouse
 You are task by a private clubhouse to write a simple program to help with their entry management.

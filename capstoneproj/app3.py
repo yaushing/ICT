@@ -47,8 +47,9 @@ Level 4 comment
 ##################
 #### IMPORTS #####
 ##################
+try: from devkey import *
+except: print("Devkey not installed.")
 import random, time
-
 ###################
 #### CONSTANTS ####
 ###################
@@ -180,17 +181,18 @@ stre, inte, life = 5, 5, 5
 ##############################
 
 def modify_start_vals(streintelife, streintelifevals, minvals):
-    modvals = streintelifevals
-    tempmodvals = modvals
+    modvals = streintelifevals.copy()
+    tempmodvals = modvals.copy()
     while True:
         print("\n_________________\n\n")
         for value in range(len(streintelife)):
-            print(f"{value + 1}: {streintelife[value]} = {streintelifevals[value]}")
-        print("Strength affects the damage of the basic attack (lower minimum and higher maximum damage of basic attack)")
+            print(f"{value + 1}: {streintelife[value]} = {modvals[value]}")
+        print("Strength affects the damage of the basic attack (lower minimum and higher maximum damage of basic attack)\n")
         print("Intelligence affects the damage of the secondary attack and the special ability (lower minimum and higher maximum damage of secondary attack)")
-        print("Life affects the amount healed every time you heal, and increases the chance for higher damage (increases minimum damage)")
-        print("Type the value to change in the following format:\n{value to change}{space}{value to bring the point to}")
+        print("Life affects the amount healed every time you heal, and increases the chance for higher damage (increases minimum damage)\n\n")
+        print("Type the value to change in the following format:\n{value to change}{space}{amount to change}{space}{value to bring the point to}")
         print("E.g. If you want to bring 1 point from Strength to Intelligence, enter {1 1 2}")
+        print("E.g. If you want to bring 3 points from Strength to Life, enter {1 3 3}")
         values = input("Enter values or [C]ontinue to game: ")
         if values.upper() == "C":
             break
@@ -201,11 +203,10 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
                 tempmodvals[amount_to_change_to - 1] += amount_to_change
                 for modval in tempmodvals:
                     if modval < minvals:
+                        print(modval, minvals)
                         print(f"Value cannot be less than {minvals}")
-                        print("Sorry!")
                         raise ValueError()
             except:
-                print("Error")
                 values = input("Enter values or [C]ontinue to game: ")
             else:
                 break
@@ -221,6 +222,7 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
 
 def parse_int(sentin, maxint=2000000000, forbid=0):
         try:
+            if sentin.upper() == "Q": raise KeyboardInterrupt()
             int(sentin)
             if int(sentin) <= maxint:
                 if int(sentin) != forbid:
@@ -295,6 +297,8 @@ def sendwave(wave, name, str, inte, life, weapon):
                 damage_reduced = True
                 target[0].buffs.pop(target[0].buffs.index(buff))
         if abilityname == "Tank up":
+            ans = f"{whoatk.name} used {abilityname} on {target[0].name}!!!"
+            print(ans)
             whoatk.buffs.append(["def up", 0.5])
             return
         if abilityname == "Basic Attack (based on Strength)" or abilityname == "Secondary attack (based on Intelligence)":
@@ -331,11 +335,13 @@ def sendwave(wave, name, str, inte, life, weapon):
         
     def AIdecide(player, canspec=False):
         if player.health <= 35:
-            return (player, player.abilities["heal"][2], 3)
+            return (player, player.abilities["heal"][2], 4)
+        elif player.health > 35 and len(player.buffs) < 1:
+            return (player, player.abilities["defup"][2], 5)
         elif canspec and player.health > 35:
-            return (AIdecidetarget(player, player.abilities["sabi"], 2))
+            return (AIdecidetarget(player, player.abilities["sabi"], 3))
         else:
-            return (AIdecidetarget(player, player.abilities["batk"], 1))
+            return random.choice((AIdecidetarget(player, player.abilities["batk"], 1)), (AIdecidetarget(player, player.abilities["batk2"], 2)))
 
     ############################
     # AI DECIDE ABILITY TARGET #
@@ -397,13 +403,13 @@ def sendwave(wave, name, str, inte, life, weapon):
                     player.canspec = canspecresults[0] # GET WHETHER SPECIAL ABILITY IS ON COOLDOWN
                     player.turns += canspecresults[1] # ADD TURNS
                     printabilities(player) # PRINT ABILITIES
-                    chosenability = input("Choose your ability (number): ") # CHOOSE ABILITY
+                    chosenability = input("Choose your ability (number) or [Q]uit: ") # CHOOSE ABILITY
                     if player.canspec: # IF SPECIAL ABILITY IS AVAILABLE
                         while not parse_int(chosenability, 5): # INPUT VALIDATION -- OLD VERSION -- CHECK INPUT VALIDATION.PY FOR NEW ONE
-                            chosenability = input("Choose your ability (number): ") # IF INPUT IS INVALID
+                            chosenability = input("Choose your ability (number) or [Q]uit: ") # IF INPUT IS INVALID
                     else: # IF SPECIAL ABILITY IS NOT AVAILABLE
                         while not parse_int(chosenability, 5, 3): # INPUT VALIDATION -- OLD VERSION -- CHECK INPUT VALIDATION.PY FOR NEW ONE
-                            chosenability = input("Choose your ability (number): ") # IF INPUT IS INVALID
+                            chosenability = input("Choose your ability (number) or [Q]uit: ") # IF INPUT IS INVALID
                     ability = int(chosenability) # GET ABILITY INTEGER 
                     if ability != 4 and ability != 5: # IF ABILITY IS "OTHER" TARGET
                         for players in totalorderedplayers: # PRINT OUT POSSIBEL TARGETS
@@ -530,17 +536,21 @@ name = input(f"Player name: ")
 # GRANT PLAYER THE DEV WEAPONS #
 ################################
 
-if name == "X11578009N":
-    # Sets name to dev name
-    name = "JKYS_11257"
-    # Grants dev weapons as a choice of weapon
-    weapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
-    weapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's isntant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
-    weapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["agressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
-    pweapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
-    pweapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's isntant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
-    pweapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["agressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
-    print("Welcome, Dev")
+print(list(decrypt_keystore().keys())[0])
+try:
+    if name in list(decrypt_keystore().keys()):
+        # Sets name to dev name
+        name = decrypt_keystore()[name][0] if int(input()) == 1 else decrypt_keystore()[name][1]
+        # Grants dev weapons as a choice of weapon
+        weapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
+        weapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's isntant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
+        weapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["agressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
+        pweapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
+        pweapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's isntant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
+        pweapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["agressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
+        print("Welcome, Dev")
+except:
+    pass
 
 ############################
 # PRINTS WEAPONS TO CHOOSE #
