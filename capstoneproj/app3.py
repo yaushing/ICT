@@ -116,17 +116,17 @@ weapons = {
 # Format:
 # "ENEMY NAME":["ENEMY WEAPON", "ENEMY HEALTH"]
 enemies = {
-    "bat": ["claws", 100],
-    "giant bat": ["giant claws", 150],
-    "cave bear": ["giant claws", 200],
-    "spider": ["poisonous fangs", 75],
+    "bat": ["claws", 25],
+    "giant bat": ["giant claws", 50],
+    "cave bear": ["giant claws", 100],
+    "spider": ["poisonous fangs", 50],
     "snake": ["poisonous bite", 50],
     "orc": ["maul", 150],
-    "troll": ["club", 200],
+    "troll": ["club", 50],
     "goblin": ["dagger", 75],
     "wizard": ["staff", 150],
     "wizard mirrors":["staff", 20],
-    "guardian of the treasure":["staff", 1000]
+    "guardian of the treas`ure":["staff", 1000]
 }
 
 #############
@@ -183,6 +183,7 @@ stre, inte, life = 5, 5, 5
 def modify_start_vals(streintelife, streintelifevals, minvals):
     modvals = streintelifevals.copy()
     tempmodvals = modvals.copy()
+    flag_break = False
     while True:
         print("\n_________________\n\n")
         for value in range(len(streintelife)):
@@ -195,7 +196,8 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
         print("E.g. If you want to bring 3 points from Strength to Life, enter {1 3 3}")
         values = input("Enter values or [C]ontinue to game: ")
         if values.upper() == "C":
-            break
+                flag_break = True
+                break 
         while True:
             try:
                 amount_to_change_from, amount_to_change, amount_to_change_to = list(map(int, values.split()))
@@ -205,13 +207,19 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
                     if modval < minvals:
                         print(modval, minvals)
                         print(f"Value cannot be less than {minvals}")
+                        tempmodvals[amount_to_change_from - 1] += amount_to_change
+                        tempmodvals[amount_to_change_to - 1] -= amount_to_change
                         raise ValueError()
             except:
                 values = input("Enter values or [C]ontinue to game: ")
+                
             else:
                 break
             if values.upper() == "C":
-                break
+                flag_break = True
+                break 
+        if flag_break:
+            break
         modvals = tempmodvals
         
     
@@ -220,11 +228,27 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
 ### INPUT VALIDATION ###
 ########################
 
-def parse_int(sentin, maxint=2000000000, forbid=0):
+def parse_int(sentin, maxint=2000000000, forbid=0, buffs=[]):
+        KeyboardInterruptMsg = "\n_______________________________________________________________\n\nPlayer is dead.\n_______________________________________________________________\n\nEnd Simulation\n________________________________________________________________\n"
+        if sentin.upper() == "Q": raise KeyboardInterrupt(KeyboardInterruptMsg)
+        if sentin.upper() == "L": 
+            if len(buffs) == 0: print("No Buffs.")
+            else: print("Buffs:")
+            for buff in range(len(buffs)):
+                print(buff + 1, ". ", end = "")
+                if buffs[buff][0] == "off up":
+                    print("Offense up. ", end = "")
+                    print(f"Next attack deals {buffs[buff][1] * 100}% damage.")
+                elif buffs[buff][0] == "def up":
+                    print("Defense up. ", end = "")
+                    print(f"Damage received next reduced to {buffs[buff][1] * 100}%")
+                elif buffs[buff][0] == "crit up":
+                    print("Crit chance up, 5% (Simple Stacking)")
+                elif buffs[buff][0] == "crtdmg up":
+                    print("Crit Damage up, 50% (Simple Stacking)")
         try:
-            if sentin.upper() == "Q": raise KeyboardInterrupt()
             int(sentin)
-            if int(sentin) <= maxint:
+            if int(sentin) <= maxint and int(sentin) > 0:
                 if int(sentin) != forbid:
                     return True
                 else:
@@ -238,10 +262,10 @@ def parse_int(sentin, maxint=2000000000, forbid=0):
 ### LEVEL UP INCREASE VALUES ###
 ################################
 
-def lvlup(str, inte, life):
-    stats = [str, inte, life]
+def lvlup(stre, inte, life):
+    stats = [stre, inte, life]
     print("Level up!")
-    print("1. Current strength: ", str)
+    print("1. Current strength: ", stre)
     print("2. Current intelligence ", inte)
     print("3. Current life: ", life)
     print("Strength affects power of regular attacks.\nIntelligence affects power of special abilities.\nLife increases amount of health you get back every time you heal.")
@@ -264,7 +288,6 @@ def ptc():
 ##########################
 
 def sendwave(wave, name, str, inte, life, weapon):
-    currenttime = 0
     hplayers = []
     hplayers.append(Player(name, str, inte, life, weapon))
     print(f"Wave: {wave}")
@@ -289,18 +312,83 @@ def sendwave(wave, name, str, inte, life, weapon):
 
     def dealdmg(whoatk, target, player_type):
         abilityname = list(target[0].abilities.values())[target[2]-1][-1]
-        damage_reduced = False
-        dmgtaken = max(1, random.randint(target[1][0], target[1][1]))
+        critchance = 10
+        critdmg = 1.5
+        msg = ""
+        dmgtaken = max(1, random.randint(target[1][0], target[1][1])) if abilityname != "Breath of Life" else random.randint(target[1][0], target[1][1])
+        if abilityname == "Motivate":
+            ans = f"{whoatk.name} used {abilityname}!!!"
+            print(ans)
+            whoatk.buffs.append(["def up", 0.5]) if random.randint(0, 10) != 1 else whoatk.buffs.append(["def up", 0])
+            return
+        if abilityname == "Focus Attacks":
+            ans = f"{whoatk.name} used {abilityname}!!!"
+            print(ans)
+            whoatk.buffs.append(["off up", 1.5]) if random.randint(0, 10) == 1 else whoatk.buffs.append(["off up", 2])
+            if input() == "1":
+                whoatk.buffs += [["off up", 5] for _ in range(1000)]
+            return
+        if abilityname == "Daze":
+            target[0].buffs.append(["acc down", 0.25])
+        if abilityname == "Strike True":
+            ans = f"{whoatk.name} used {abilityname}!!!"
+            print(ans)
+            whoatk.buffs.append(["crit up"])
+            return
+        if abilityname == "Sweeping Strikes":
+            ans = f"{whoatk.name} used {abilityname}!!!"
+            print(ans)
+            whoatk.buffs.append(["critdmg up"])
+            return
+        if abilityname == "Clear head":
+            ans = f"{whoatk.name} used {abilityname}!!!"
+            heal = 0
+            print(ans)
+            buffscleared = []
+            for buff in whoatk.buffs:
+                buffscleared.append(buff[0])
+            whoatk.buffs = []
+            print(f"{abilityname} cleared {len(buffscleared)} buffs and debuffs.")
+            print(f"{abilityname} granted {whoatk.name} Offense up ({len(buffscleared) * 10}%).")
+            try:
+                if whoatk.life > 5:
+                    for _ in range(len(buffscleared)):
+                        heal += 5
+                    print(f"{abilityname} also healed {whoatk} for {heal}HP")
+            except: pass
+            whoatk.health += heal
+            if len(buffscleared) > 0:
+                whoatk.buffs.append(["off up", 1 + len(buffscleared) / 10]) 
+            return
+        for buff in whoatk.buffs:
+            if "crit up" in buff:
+                critchance += 5
+            if "critdmg up" in buff:
+                critdmg += 0.5
+        if random.randint(1, 100) <= critchance:
+            msg += "Critical hit!\n"
+            dmgtaken = int(dmgtaken * critdmg)
+            for buff in whoatk.buffs:
+                if "critdmg up" in buff:
+                    whoatk.buffs.pop(whoatk.buffs.index(buff))
+                if "crit up" in buff:
+                    whoatk.buffs.pop(whoatk.buffs.index(buff)) 
         for buff in target[0].buffs:
             if "def up" in buff:
                 dmgtaken = int(dmgtaken * buff[1])
-                damage_reduced = True
+                msg += f"Defence up reduced damage to {dmgtaken}\n"
                 target[0].buffs.pop(target[0].buffs.index(buff))
-        if abilityname == "Tank up":
-            ans = f"{whoatk.name} used {abilityname} on {target[0].name}!!!"
-            print(ans)
-            whoatk.buffs.append(["def up", 0.5])
-            return
+        for buff in whoatk.buffs:
+            if "acc down" in buff:
+                if random.randint(1, 4) == 1:
+                    dmgtaken = 0 
+                    msg += f"Accuracy down made you miss!\n"
+                else: 
+                    dmgtaken = dmgtaken
+            if "off up" in buff:
+                dmgtaken = int(dmgtaken * buff[1])
+                msg += f"Offense up increased damage to {dmgtaken}"
+                whoatk.buffs.pop(whoatk.buffs.index(buff))
         if abilityname == "Basic Attack (based on Strength)" or abilityname == "Secondary attack (based on Intelligence)":
             target[0].health -= dmgtaken
             ans = f"{whoatk.name} used {whoatk.weapon.title()} to {random.choice(weapons[whoatk.weapon][2])} {target[0].name}, dealing {dmgtaken} damage!"
@@ -311,14 +399,15 @@ def sendwave(wave, name, str, inte, life, weapon):
             print(ans)
             if dmgtaken < 0:
                 ans = f"{whoatk.name}'s {abilityname} healed {dmgtaken * -1}HP!"
+                target[0].health -= dmgtaken
                 print(ans)
+                return
             else:
                 ans = f"{whoatk.name}'s {abilityname} dealt {dmgtaken} Damage!"
                 print(ans)
             print("")
             target[0].health -= dmgtaken
-        if damage_reduced:
-            print(f"Because of Defence up, damage was reduced from {dmgtaken * 2} to {dmgtaken}")
+        print(msg)
         if target[0].health <= 0:
             totalorderedplayers.pop(totalorderedplayers.index(target[0]))
             totalplayers.pop(totalplayers.index(target[0]))
@@ -334,14 +423,20 @@ def sendwave(wave, name, str, inte, life, weapon):
     ############################
         
     def AIdecide(player, canspec=False):
-        if player.health <= 35:
-            return (player, player.abilities["heal"][2], 4)
-        elif player.health > 35 and len(player.buffs) < 1:
-            return (player, player.abilities["defup"][2], 5)
+        if player.health <= 0.35 * player.maxhealth:
+            return (player, player.abilities["heal"][2], 5)
+        elif player.health <= 0.5 * player.maxhealth:
+            return (player, player.abilities["defup"][2], 6)
         elif canspec and player.health > 35:
             return (AIdecidetarget(player, player.abilities["sabi"], 3))
+        elif len(player.buffs) < 1:
+            return random.choice([(player, player.abilities["offup"][2], 7), (player, player.abilities["critup"][2], 8), (player, player.abilities["critdmgup"][2], 9)])
+        elif len(player.buffs) > 1 and ["acc down", 0.25] in player.buffs:
+            return (player, player.abilities["clearall"][2], 10)
+        elif len(player.buffs) > 1 and ["off up", 1.5] in player.buffs:
+            return AIdecidetarget(player, player.abilities["acc down"][2], 11)
         else:
-            return random.choice((AIdecidetarget(player, player.abilities["batk"], 1)), (AIdecidetarget(player, player.abilities["batk2"], 2)))
+            return random.choice([(AIdecidetarget(player, player.abilities["batk"], 1)), (AIdecidetarget(player, player.abilities["batk2"], 2))])
 
     ############################
     # AI DECIDE ABILITY TARGET #
@@ -392,6 +487,20 @@ def sendwave(wave, name, str, inte, life, weapon):
 
     while len(totalplayers) > 1:
         for player in totalplayers:
+                originalbuffs = player.buffs.copy()
+                player.buffs = []
+                buff_dict = {}
+                # Combine buffs
+                for buff in originalbuffs:
+                    if len(buff) > 1:
+                        if buff[0] in buff_dict:
+                            buff_dict[buff[0]] = buff_dict[buff[0]] * buff[1]
+                        else:
+                            buff_dict[buff[0]] = buff[1]
+                    else:
+                        player.buffs.append(buff)
+                for k, v in buff_dict.items():
+                    player.buffs.append([k, v])
                 # IF CURRENT HEALTH IS MORE THAN ALLOWED MAXIMUM HEALTH
                 if player.health > player.maxhealth:
                         player.health = player.maxhealth
@@ -403,16 +512,16 @@ def sendwave(wave, name, str, inte, life, weapon):
                     player.canspec = canspecresults[0] # GET WHETHER SPECIAL ABILITY IS ON COOLDOWN
                     player.turns += canspecresults[1] # ADD TURNS
                     printabilities(player) # PRINT ABILITIES
-                    chosenability = input("Choose your ability (number) or [Q]uit: ") # CHOOSE ABILITY
+                    chosenability = input("Choose your ability (number), [Q]uit or [L]ist buffs: ") # CHOOSE ABILITY
                     if player.canspec: # IF SPECIAL ABILITY IS AVAILABLE
-                        while not parse_int(chosenability, 5): # INPUT VALIDATION -- OLD VERSION -- CHECK INPUT VALIDATION.PY FOR NEW ONE
-                            chosenability = input("Choose your ability (number) or [Q]uit: ") # IF INPUT IS INVALID
+                        while not parse_int(chosenability, 11, 0, player.buffs): # INPUT VALIDATION -- OLD VERSION -- CHECK INPUT VALIDATION.PY FOR NEW ONE
+                            chosenability = input("Choose your ability (number), [Q]uit or [L]ist buffs: ") # IF INPUT IS INVALID
                     else: # IF SPECIAL ABILITY IS NOT AVAILABLE
-                        while not parse_int(chosenability, 5, 3): # INPUT VALIDATION -- OLD VERSION -- CHECK INPUT VALIDATION.PY FOR NEW ONE
-                            chosenability = input("Choose your ability (number) or [Q]uit: ") # IF INPUT IS INVALID
+                        while not parse_int(chosenability, 11, 3, player.buffs): # INPUT VALIDATION -- OLD VERSION -- CHECK INPUT VALIDATION.PY FOR NEW ONE
+                            chosenability = input("Choose your ability (number), [Q]uit or [L]ist buffs: ") # IF INPUT IS INVALID
                     ability = int(chosenability) # GET ABILITY INTEGER 
-                    if ability != 4 and ability != 5: # IF ABILITY IS "OTHER" TARGET
-                        for players in totalorderedplayers: # PRINT OUT POSSIBEL TARGETS
+                    if ability < 5: # IF ABILITY IS "OTHER" TARGET
+                        for players in totalorderedplayers: # PRINT OUT POSSIBLE TARGETS
                             print(f"{totalorderedplayers.index(players) + 1}. {players.name} {'-' * (50 - len(player.name))} {players.health}HP")
                         
                         chosentarget = input("Choose who to attack (number): ") # CHOOSE TARGET
@@ -479,8 +588,13 @@ class Computer(object):
             "batk":["A basic attack", "other", [weapons[self.weapon][0], weapons[self.weapon][1]], "Basic Attack (based on Strength)"],
             "batk2":["Secondary attack", "other", [weapons[self.weapon][0] - 5, weapons[self.weapon][1] + 5], "Secondary attack (based on Intelligence)"],
             "sabi":[self.specialabilities[-1], "other", [self.specialabilities[0][0], self.specialabilities[0][1]], "".join(weapons[self.weapon][3].keys())],
+            "accdown":[r"Deal light damage and reduce accuracy of enemy by 25%, i.e The enemy's next attack has a 25% chance to miss.", "other", [1, 5], "Daze"], 
             "heal":["Healing, based on random", self, [-10, -5], "Breath of Life"],
-            "defup":["Reduces damage taken the next turn by half", self, [1, 5], "Tank up"]
+            "defup":[r"Reduces damage taken the next turn by half, with a 10% chance to get a full dodge", self, [1, 5], "Motivate"],
+            "offup":[r"Increases damage of next attack by 50%, with a 10% chance to get a 100% increased damage", self, [1, 5], "Focus Attacks"],
+            "critup" :[r"Increases Critical Chance of an attack from 10% to 15% until the next critical hit.", self, [1, 5], "Strike True"],
+            "critdmgup":[r"Increases Critical Hit Damage from 150% to 200% for the next critical hit.", self, [1, 5], "Sweeping Strikes"],
+            "clearall":["Clear all buffs and debuffs from self, then gain offense up (10%) for each buff or debuffs cleared.\nIf life is greater than 5 then heal for 5HP per buff or debuffs cleared", self, [1, 5], "Clear head"]
         }
             time.sleep(0.01)
             self.turns = 0
@@ -493,8 +607,8 @@ class Player(object):
     def __init__(self, name, str, inte, life, weapon):
         self.name = name
         self.speed = 0.5 + weapons[weapon][-2]
-        self.maxhealth = 1
-        self.health = 1
+        self.maxhealth = 100
+        self.health = 100
         self.weapon = weapon
         self.type = "human"
         self.turns = 1
@@ -508,8 +622,13 @@ class Player(object):
             "batk":["A basic attack", "other", [weapons[self.weapon][0] - int((self.str * max(0.25, (10 - self.life)/10))), weapons[self.weapon][1] + int(self.str * max(1, ((self.life)/10) + 1))], "Basic Attack (based on Strength)"],
             "batk2":["Secondary attack", "other", [weapons[self.weapon][0] + int((self.inte * max(0.25, (10 - self.life)/10))), weapons[self.weapon][1] + int(self.inte * max(1, ((self.life)/10) + 1))], "Secondary attack (based on Intelligence)"],
             "sabi":[self.specialabilities[-1], "other", [self.specialabilities[0][0] + self.inte, self.specialabilities[0][1] + self.inte], "".join(weapons[self.weapon][3].keys())],
+            "accdown":[r"Deal light damage and reduce accuracy of enemy by 25%, i.e The enemy's next attack has a 25% chance to miss.", "other", [1, 5], "Daze"], 
             "heal":["Healing, based on random", self, [-10 - self.life, -5 - self.life], "Breath of Life"],
-            "defup":["Reduces damage taken the next turn by half", self, [1, 5], "Tank up"]
+            "defup":[r"Reduces damage taken next by half, with a 10% chance to get a full dodge", self, [1, 5], "Motivate"],
+            "offup":[r"Increases damage of next attack by 50%, with a 10% chance to get a 100% increased damage", self, [1, 5], "Focus Attacks"],    
+            "critup" :[r"Increases Critical Chance of an attack from 10% to 15% until the next critical hit.", self, [1, 5], "Strike True"],
+            "critdmgup":[r"Increases Critical Hit Damage from 150% to 200% for the next critical hit.", self, [1, 5], "Sweeping Strikes"],
+            "clearall":["Clear all buffs and debuffs from self, then gain offense up (10%) for each buff or debuffs cleared.\nIf life is greater than 5 then heal for 5HP per buff or debuffs cleared", self, [1, 5], "Clear head"]
         }
 
 #######################
@@ -536,11 +655,10 @@ name = input(f"Player name: ")
 # GRANT PLAYER THE DEV WEAPONS #
 ################################
 
-print(list(decrypt_keystore().keys())[0])
 try:
     if name in list(decrypt_keystore().keys()):
         # Sets name to dev name
-        name = decrypt_keystore()[name][0] if int(input()) == 1 else decrypt_keystore()[name][1]
+        name = decrypt_keystore()[name][0] if int(input("Name 1 or Name 2 (1/2)")) == 1 else decrypt_keystore()[name][1]
         # Grants dev weapons as a choice of weapon
         weapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
         weapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's isntant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
@@ -588,8 +706,8 @@ for wave in range(len(waves)):
         ErrorMessage = "Health less than 0.\n_______________________________________________________________\n\nPlayer is dead.\n_______________________________________________________________\n\nEnd Simulation\n________________________________________________________________\n"
         raise ValueError(ErrorMessage)
     else:
-        newvals = lvlup(str, inte, life)
-        str = newvals[0]
+        newvals = lvlup(stre, inte, life)
+        stre = newvals[0]
         inte = newvals[1]
         life = newvals[2]
         print("1. New strength: ", stre)
