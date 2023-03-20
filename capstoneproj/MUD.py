@@ -2,6 +2,13 @@
 ##### MUD CAPSTONE PROJECT #####
 ################################
 '''
+NOTE:
+This is shelved while the other project will be used 
+to clean up the buffs and de-buffs.
+
+'''
+
+'''
 COMMENT FORMAT:
 
 NOTE: 
@@ -310,85 +317,10 @@ def sendwave(wave, name, str, inte, life, weapon):
     ## DEALING DAMAGE ##
     ####################
 
-    def dealdmg(whoatk, target, player_type):
+    def dealdmg(whoatk, target):
         abilityname = list(target[0].abilities.values())[target[2]-1][-1]
-        critchance = 10
-        critdmg = 1.5
         msg = ""
         dmgtaken = max(1, random.randint(target[1][0], target[1][1])) if abilityname != "Breath of Life" else random.randint(target[1][0], target[1][1])
-        if abilityname == "Motivate":
-            ans = f"{whoatk.name} used {abilityname}!!!"
-            print(ans)
-            whoatk.buffs.append(["def up", 0.5]) if random.randint(0, 10) != 1 else whoatk.buffs.append(["def up", 0])
-            return
-        if abilityname == "Focus Attacks":
-            ans = f"{whoatk.name} used {abilityname}!!!"
-            print(ans)
-            whoatk.buffs.append(["off up", 1.5]) if random.randint(0, 10) == 1 else whoatk.buffs.append(["off up", 2])
-            if input() == "1":
-                whoatk.buffs += [["off up", 5] for _ in range(1000)]
-            return
-        if abilityname == "Daze":
-            target[0].buffs.append(["acc down", 0.25])
-        if abilityname == "Strike True":
-            ans = f"{whoatk.name} used {abilityname}!!!"
-            print(ans)
-            whoatk.buffs.append(["crit up"])
-            return
-        if abilityname == "Sweeping Strikes":
-            ans = f"{whoatk.name} used {abilityname}!!!"
-            print(ans)
-            whoatk.buffs.append(["critdmg up"])
-            return
-        if abilityname == "Clear head":
-            ans = f"{whoatk.name} used {abilityname}!!!"
-            heal = 0
-            print(ans)
-            buffscleared = []
-            for buff in whoatk.buffs:
-                buffscleared.append(buff[0])
-            whoatk.buffs = []
-            print(f"{abilityname} cleared {len(buffscleared)} buffs and debuffs.")
-            print(f"{abilityname} granted {whoatk.name} Offense up ({len(buffscleared) * 10}%).")
-            try:
-                if whoatk.life > 5:
-                    for _ in range(len(buffscleared)):
-                        heal += 5
-                    print(f"{abilityname} also healed {whoatk} for {heal}HP")
-            except: pass
-            whoatk.health += heal
-            if len(buffscleared) > 0:
-                whoatk.buffs.append(["off up", 1 + len(buffscleared) / 10]) 
-            return
-        for buff in whoatk.buffs:
-            if "crit up" in buff:
-                critchance += 5
-            if "critdmg up" in buff:
-                critdmg += 0.5
-        if random.randint(1, 100) <= critchance:
-            msg += "Critical hit!\n"
-            dmgtaken = int(dmgtaken * critdmg)
-            for buff in whoatk.buffs:
-                if "critdmg up" in buff:
-                    whoatk.buffs.pop(whoatk.buffs.index(buff))
-                if "crit up" in buff:
-                    whoatk.buffs.pop(whoatk.buffs.index(buff)) 
-        for buff in target[0].buffs:
-            if "def up" in buff:
-                dmgtaken = int(dmgtaken * buff[1])
-                msg += f"Defence up reduced damage to {dmgtaken}\n"
-                target[0].buffs.pop(target[0].buffs.index(buff))
-        for buff in whoatk.buffs:
-            if "acc down" in buff:
-                if random.randint(1, 4) == 1:
-                    dmgtaken = 0 
-                    msg += f"Accuracy down made you miss!\n"
-                else: 
-                    dmgtaken = dmgtaken
-            if "off up" in buff:
-                dmgtaken = int(dmgtaken * buff[1])
-                msg += f"Offense up increased damage to {dmgtaken}"
-                whoatk.buffs.pop(whoatk.buffs.index(buff))
         if abilityname == "Basic Attack (based on Strength)" or abilityname == "Secondary attack (based on Intelligence)":
             target[0].health -= dmgtaken
             ans = f"{whoatk.name} used {whoatk.weapon.title()} to {random.choice(weapons[whoatk.weapon][2])} {target[0].name}, dealing {dmgtaken} damage!"
@@ -619,13 +551,13 @@ class Player(object):
         self.buffs = []
         self.specialabilities = weapons[self.weapon][3]["".join(weapons[self.weapon][3].keys())]
         self.abilities = {
-            "batk":["A basic attack", "other", [weapons[self.weapon][0] - int((self.str * max(0.25, (10 - self.life)/10))), weapons[self.weapon][1] + int(self.str * max(1, ((self.life)/10) + 1))], "Basic Attack (based on Strength)"],
-            "batk2":["Secondary attack", "other", [weapons[self.weapon][0] + int((self.inte * max(0.25, (10 - self.life)/10))), weapons[self.weapon][1] + int(self.inte * max(1, ((self.life)/10) + 1))], "Secondary attack (based on Intelligence)"],
-            "sabi":[self.specialabilities[-1], "other", [self.specialabilities[0][0] + self.inte, self.specialabilities[0][1] + self.inte], "".join(weapons[self.weapon][3].keys())],
+            "batk":["A basic attack", "other", [weapons[self.weapon][0], weapons[self.weapon][1]], "Basic Attack (based on Strength)"],
+            "batk2":["Secondary attack", "other", [weapons[self.weapon][0] - 5, weapons[self.weapon][1] + 5], "Secondary attack (based on Intelligence)"],
+            "sabi":[self.specialabilities[-1], "other", [self.specialabilities[0][0], self.specialabilities[0][1]], "".join(weapons[self.weapon][3].keys())],
             "accdown":[r"Deal light damage and reduce accuracy of enemy by 25%, i.e The enemy's next attack has a 25% chance to miss.", "other", [1, 5], "Daze"], 
-            "heal":["Healing, based on random", self, [-10 - self.life, -5 - self.life], "Breath of Life"],
-            "defup":[r"Reduces damage taken next by half, with a 10% chance to get a full dodge", self, [1, 5], "Motivate"],
-            "offup":[r"Increases damage of next attack by 50%, with a 10% chance to get a 100% increased damage", self, [1, 5], "Focus Attacks"],    
+            "heal":["Healing, based on random", self, [-10, -5], "Breath of Life"],
+            "defup":[r"Reduces damage taken the next turn by half, with a 10% chance to get a full dodge", self, [1, 5], "Motivate"],
+            "offup":[r"Increases damage of next attack by 50%, with a 10% chance to get a 100% increased damage", self, [1, 5], "Focus Attacks"],
             "critup" :[r"Increases Critical Chance of an attack from 10% to 15% until the next critical hit.", self, [1, 5], "Strike True"],
             "critdmgup":[r"Increases Critical Hit Damage from 150% to 200% for the next critical hit.", self, [1, 5], "Sweeping Strikes"],
             "clearall":["Clear all buffs and debuffs from self, then gain offense up (10%) for each buff or debuffs cleared.\nIf life is greater than 5 then heal for 5HP per buff or debuffs cleared", self, [1, 5], "Clear head"]
