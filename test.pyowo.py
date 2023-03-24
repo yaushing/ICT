@@ -1,0 +1,2 @@
+import PythOwO
+pwint("hi")

@@ -95,6 +95,7 @@ weapons = {
     "scythe": [8, 16, ["reap", "mow down"], {"Harvest Time":[[18, 25], 3, "A sweeping attack that cuts down multiple enemies"]}, 0.2, "Scythe"],
     "crossbow": [4, 10, ["fire", "bolt"], {"Sniper Shot":[[12, 20], 4, "A precise shot that deals heavy damage from a distance"]}, 0.2, "Crossbow"],
     "staff": [2, 6, ["smack", "whack"], {"Arcane Blast":[[10, 15], 3, "A blast of magical energy that deals moderate damage"]}, 0.2, "Staff"],
+    "mirror staff": [1, 3, ["smack", "whack"], {"Arcane Blast":[[5, 7.5], 3, "A blast of magical energy that deals moderate damage"]}, 0.2, "Mirror Staff"],
     "mace": [7, 14, ["crush", "smash"], {"Bone-Breaker":[[18, 25], 2, "A heavy blow that shatters the opponent's bones"]}, 0.2, "Mace"],
     "whip": [3, 7, ["lash", "whip"], {"Crack of Doom":[[10, 15], 2, "A loud crack that stuns the opponent"]}, 0.2, "Whip"],
     "halberd": [9, 18, ["chop", "impale"], {"Sky Piercer":[[20, 30], 3, "A powerful upward strike that impales the enemy"]}, 0.2, "Halberd"],
@@ -105,6 +106,7 @@ weapons = {
     "maul": [8, 10, ["smash"], {"Crush":[[15, 25], 5, "A powerful blow that crushes the target"]}, 0.2, "Maul"],
     "claws":[1, 3, ["scratch", "peel at"], {"Deep Cut":[[5, 10], 2, "Causes a pretty deep cut"]}, 0.2, "Claws"], 
     "giant claws":[10, 20, ["shred", "cut through"], {"Disembowel":[[10, 20], 4, "Well this is the only way to kill a Skull Crawler"]}, 0.3, "Giant Claws"],
+    "stupidity":[0, 50, ["chess"], {"Brain":[[1, 51], 4, "Brainsss"]}, 0.54, "Stupidity"],
 }
 
 ###############
@@ -126,7 +128,8 @@ enemies = {
     "goblin": ["dagger", 75],
     "wizard": ["staff", 150],
     "wizard mirrors":["mirror staff", 10],
-    "guardian of the treasure":["staff", 1000]
+    "guardian of the treasure":["staff", 1000],
+    "james":["stupidity", 50]
 }
 
 #############
@@ -140,14 +143,15 @@ waves = [
     [[3, "bat"]],
     [[1, "giant bat"]],
     [[3, "bat"], [1, "cave bear"]],
-    [[1, "giant bat"], [2, "cave bear"], [3, "bat"]],
+    [[1, "giant bat"], [1, "cave bear"], [1, "bat"]],
     [[1, "goblin"]],
-    [[3, "orc"], [4, "troll"]],
+    [[1, "orc"], [1, "troll"]],
     [[1, "wizard"]],
     [[3, "wizard"]],
     [[1, "wizard"]],
-    [[10, "wizard mirrors"]],
+    [[1, "wizard mirrors"]],
     [[1, "guardian of the treasure"]],
+    [[1, "james"]],
 ]
 # DESCRIPTION OF WAVES
 wavesdesc = [
@@ -162,7 +166,8 @@ wavesdesc = [
     "You kick the wizard to the floor and look up. As it turned out, dozens of wizards were there, cowering. A few brave wizards stepped forward to avenge their fallen comrade.",
     "'YOU FOOL!' A thunderous voice said. Looking up, it was the original wizard who you saw. He charged at you.",
     "He was panting on the ground. But when you moved closer to him, he suddenly duplicated himself into several mirrors.",
-    "Defeating all of his mirrors, you look at him, with him floating in his full power. 'I ... will ... avenge ... MY BROTHERS!!!' He yelling, flying at you." 
+    "Defeating all of his mirrors, you look at him, with him floating in his full power. 'I ... will ... avenge ... MY BROTHERS!!!' He yelling, flying at you." ,
+    "A Wild James appears!"
 ]
 
 ########################
@@ -349,6 +354,7 @@ def sendwave(wave, name, str, inte, life, weapon, abilities):
             return
         ability = list(whoatk.abilities.values())[target[2]-1]
         if ability[-3] == "Buff" and "up" in list(whoatk.abilities.keys())[list(whoatk.abilities.values()).index(ability)]:
+            crit = random.randint(1, 10)
             whoatk.buffs.append([ability[-4][0], ability[-4][1][0]]) if crit < 10 else whoatk.buffs.append([ability[-4][0], ability[-4][1][1]])
             whoatk.stats[ability[-4][0]] += ability[-4][1][0] if crit < 10 else ability[-4][1][1]
             whoatk.stats["def"] = min(1, whoatk.stats["def"])
@@ -368,7 +374,7 @@ def sendwave(wave, name, str, inte, life, weapon, abilities):
             whoatk.stats["critdmg"] = 1.5
             off_up_percent = 0.1 * cleared_buffs
             whoatk.stats["off"] += off_up_percent
-            whoatk.buffs.append(["off"], 1 + off_up_percent)
+            whoatk.buffs.append([["off"], 1 + off_up_percent])
         else:
             if random.randint(1, 100) < whoatk.stats["critchance"]:
                 msg += "Critical Hit!\n"
@@ -670,49 +676,6 @@ name = input(f"Player name: ")
 # GRANT PLAYER THE DEV WEAPONS #
 ################################
 
-try:
-    if name in list(decrypt_keystore().keys()):
-        # Sets name to dev name
-        name = decrypt_keystore()[name][0] if int(input("Name 1 or Name 2 (1/2)")) == 1 else decrypt_keystore()[name][1]
-        # Grants dev weapons as a choice of weapon
-        weapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
-        weapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's instant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
-        weapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["agressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
-        pweapons["dev sword"] = [100, 200, ["kill"], {"SHREDDER":[[500, 1000], 2, "Instant kill"]}, -0.4, "Dev Sword"]
-        pweapons["dev bow"] = [300, 400, ["shoot", "pierce"], {"Rapid Fire":[[10000, 100000], 2, "You thought the dev sword's instant kill wasn't enough? It is NOW!"]}, -0.4, "Dev Bow"]
-        pweapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["agressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
-        print("Welcome, Dev")
-except:
-    pass
-
-############################
-# PRINTS WEAPONS TO CHOOSE #
-############################
-
-if len(players) > 0:
-        for pweapon in range(len(list(pweapons.keys()))):
-                print(pweapon + 1, end=" ")
-                print(pweapons[list(pweapons.keys())[pweapon]][-1].title())
-
-#################
-# SELECT WEAPON #
-#################
-weaponint = parse_int("Choose your weapon (number): ", len(pweapons))
-weapon = weapons[list(pweapons.keys())[int(weaponint) - 1]][-1].lower()
-print(f"{name} chose {weapon}!")
-
-
-############################
-## MODIFY STARTING VALUES ##
-############################
-
-modify_start_vals(["Strength", "Intelligence", "Life"], [stre, inte, life], 3)
-
-#################
-## SENDS WAVES ##
-#################
-new_abilities = []# Comment Section –– Python Code
-
 # Try-Except Block to check if name exists, and grant weapons to dev.
 try:
     if name in list(decrypt_keystore().keys()):
@@ -728,6 +691,7 @@ try:
         pweapons["test weapon - no damage (special ability heals) - prolong game"] = [0, 0, ["aggressively sit next to"], {"Touch of Life":[[-100, -50], 2, "Heals"]}, -0.4, "test weapon - no damage (special ability heals) - prolong game"]
         # Greet the dev
         print("Welcome, Dev")
+        wave_to_start = int(input("Wave: "))
 except:
     pass
 
@@ -744,13 +708,26 @@ weaponint = parse_int("Choose your weapon (number): ", len(pweapons))
 weapon = weapons[list(pweapons.keys())[int(weaponint) - 1]][-1].lower()
 print(f"{name} chose {weapon}!")
 
+
+############################
+## MODIFY STARTING VALUES ##
+############################
+
+modify_start_vals(["Strength", "Intelligence", "Life"], [stre, inte, life], 3)
+
+#################
+## SENDS WAVES ##
+#################
+new_abilities = []# Comment Section –– Python Code
+
 # Modify starting values based on the user's selection
 modify_start_vals(["Strength", "Intelligence", "Life"], [stre, inte, life], 3)
 
 # Send waves to fight against enemies and upgrade level if the player continues playing
 new_abilities = []
 new_ability_waves = [2, 3, 5, 11]
-for wave in range(len(waves)):
+for wave in range(wave_to_start, len(waves)):
+    print(f"Computiong: {wave}")
     print()
     # If current wave number is in new_ability_waves, add new abilities accordingly
     if (wave + 1) in new_ability_waves:
@@ -780,27 +757,3 @@ print("The story:")
 for i in range(len(wavesdesc)):
     print(wavesdesc[i])
 
-new_ability_waves = [2, 3, 5, 11]
-for wave in range(len(waves)):
-    print()
-    if (wave + 1) in new_ability_waves:
-        new_abilities = get_abilities(new_abilities)
-    contyn = sendwave(wave+1, name, stre, inte, life, weapon, new_abilities)
-    if contyn == "no":
-        ErrorMessage = "Health less than 0.\n_______________________________________________________________\n\nPlayer is dead.\n_______________________________________________________________\n\nEnd Simulation\n________________________________________________________________\n"
-        raise ValueError(ErrorMessage)
-    else:
-        newvals = lvlup(stre, inte, life)
-        stre = newvals[0]
-        inte = newvals[1]
-        life = newvals[2]
-        print("1. New strength: ", stre)
-        print("2. New intelligence ", inte)
-        print("3. New life: ", life)
-        ptc()
-
-print(f"You made it to the end!")
-print("The story:")
-for i in range(len(wavesdesc)):
-    print(wavesdesc[i])
-    print("\n")
