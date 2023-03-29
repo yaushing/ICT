@@ -106,7 +106,6 @@ weapons = {
     "maul": [8, 10, ["smash"], {"Crush":[[15, 25], 5, "A powerful blow that crushes the target"]}, 0.2, "Maul"],
     "claws":[1, 3, ["scratch", "peel at"], {"Deep Cut":[[5, 10], 2, "Causes a pretty deep cut"]}, 0.2, "Claws"], 
     "giant claws":[10, 20, ["shred", "cut through"], {"Disembowel":[[10, 20], 4, "Well this is the only way to kill a Skull Crawler"]}, 0.3, "Giant Claws"],
-    "stupidity":[0, 50, ["chess"], {"Brain":[[1, 51], 4, "Brainsss"]}, 0.54, "Stupidity"],
 }
 
 ###############
@@ -129,7 +128,6 @@ enemies = {
     "wizard": ["staff", 150],
     "wizard mirrors":["mirror staff", 10],
     "guardian of the treasure":["staff", 1000],
-    "james":["stupidity", 50]
 }
 
 #############
@@ -151,7 +149,6 @@ waves = [
     [[1, "wizard"]],
     [[1, "wizard mirrors"]],
     [[1, "guardian of the treasure"]],
-    [[1, "james"]],
 ]
 # DESCRIPTION OF WAVES
 wavesdesc = [
@@ -167,7 +164,6 @@ wavesdesc = [
     "'YOU FOOL!' A thunderous voice said. Looking up, it was the original wizard who you saw. He charged at you.",
     "He was panting on the ground. But when you moved closer to him, he suddenly duplicated himself into several mirrors.",
     "Defeating all of his mirrors, you look at him, with him floating in his full power. 'I ... will ... avenge ... MY BROTHERS!!!' He yelling, flying at you." ,
-    "A Wild James appears!"
 ]
 
 ########################
@@ -231,6 +227,8 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
     tempmodvals = modvals.copy()
     flag_break = False
     while True:
+        if flag_break:
+            break
         print("\n_________________\n\n")
         for value in range(len(streintelife)):
             print(f"{value + 1}: {streintelife[value]} = {modvals[value]}")
@@ -264,8 +262,6 @@ def modify_start_vals(streintelife, streintelifevals, minvals):
             if values.upper() == "C":
                 flag_break = True
                 break 
-        if flag_break:
-            break
         modvals = tempmodvals
         
     
@@ -693,6 +689,7 @@ try:
         print("Welcome, Dev")
         wave_to_start = int(input("Wave: "))
 except:
+    wave=0
     pass
 
 # Print weapons to choose from for players who exist in the game
